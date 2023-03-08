@@ -1,5 +1,13 @@
 #include "raylib.h"
 
+struct AnimData
+{
+	Rectangle rect;
+	Vector2 pos;
+	int frame;
+	float updateTime;
+	float runningTime;
+};
 
 int main()
 {
@@ -11,36 +19,30 @@ int main()
 
 	//Sprites
 	// ***SCURFY***
+	
 	Texture2D scarfy = LoadTexture("textures/scarfy.png");
-	Rectangle scarfyRect;
-	scarfyRect.width = scarfy.width / 6;
-	scarfyRect.height = scarfy.height;
-	scarfyRect.x = 0;
-	scarfyRect.y = 0;
+	AnimData scarfyData;
 
-	Vector2 scarfyPos;
-	scarfyPos.x = WindowWidth / 2 - scarfyRect.width / 2;
-	scarfyPos.y = WindowHeight - scarfyRect.height;
-
-	int scarfyFrame = 0;
-	const float scarfyUpdateTime = 1.0 / 12.0;
-	float scarfyRunningTime = 0;
+	scarfyData.rect.x = 0.0;
+	scarfyData.rect.y = 0.0;
+	scarfyData.rect.width = scarfy.width / 6;
+	scarfyData.rect.height = scarfy.height;
+	scarfyData.pos.x = WindowWidth / 2 - scarfyData.rect.width / 2;
+	scarfyData.pos.y = WindowHeight - scarfyData.rect.height;
+	scarfyData.frame = 0;
+	scarfyData.updateTime = 1.0 / 12.0;
+	scarfyData.runningTime = 0;
 
 	// *** NEBULA ***
 	Texture2D nebula = LoadTexture("textures/nebula.png");
-	Rectangle nebulaRect;
-	nebulaRect.width = nebula.width / 8;
-	nebulaRect.height = nebula.height / 8;
-	nebulaRect.x = 0.0;
-	nebulaRect.y = 0.0;
-
-	Vector2 nebulaPos{ WindowWidth, WindowHeight - nebulaRect.height};
-	int nebulaVel = 400; //pixels per second
-	
-	int nebulaFrame = 0;
-	const float nebulaUpdateTime = 1.0 / 50.0;
-	float nebulaRunningTime = 0;
-
+	AnimData nebulaData
+	{
+		{0.0, 0.0, nebula.width / 8, nebula.height / 8}, //Rectangle Rect
+		{WindowWidth, WindowHeight - nebulaData.rect.height}, //Vector2 pos
+		0, //int frame
+		1.0 / 12.0, //float updateTime
+		0.0  //float runningTime
+	};
 
 	//Bools
 	bool isCharacterGrounded;
@@ -49,6 +51,7 @@ int main()
 	const int gravity = 1'000; // pixel per second per second (p/s^2)
 	const int jumpForce = -600; //pixels/second
 	int scarfyVelocity = 0;	
+	int nebulaVel = 200;
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose())
@@ -61,7 +64,7 @@ int main()
 		ClearBackground(WHITE);
 
 
-		isCharacterGrounded = scarfyPos.y >= WindowHeight - scarfyRect.height;
+		isCharacterGrounded = scarfyData.pos.y >= WindowHeight - scarfyData.rect.height;
 
 		//ground check
 		if (isCharacterGrounded)
@@ -83,43 +86,43 @@ int main()
 		}
 
 		//update positions
-		scarfyPos.y += scarfyVelocity * dT;
-		nebulaPos.x += -nebulaVel * dT;
+		scarfyData.pos.y += scarfyVelocity * dT;
+		nebulaData.pos.x += -nebulaVel * dT;
 
 		//Update Running Time
 		//Scarfy
-		scarfyRunningTime += dT;
-		if (scarfyRunningTime >= scarfyUpdateTime && isCharacterGrounded)
+		scarfyData.runningTime += dT;
+		if (scarfyData.runningTime >= scarfyData.updateTime && isCharacterGrounded)
 		{
-			scarfyRunningTime = 0.0;
+			scarfyData.runningTime = 0.0;
 			//Update animation frame
-			scarfyRect.x = scarfyRect.width * scarfyFrame;
-			scarfyFrame++;
-			if (scarfyFrame > 5)
+			scarfyData.rect.x = scarfyData.rect.width * scarfyData.frame;
+			scarfyData.frame++;
+			if (scarfyData.frame > 5)
 			{
-				scarfyFrame = 0;
+				scarfyData.frame = 0;
 			}
 		}
 
 		//Nebula
-		nebulaRunningTime += dT;
-		if (nebulaRunningTime >= nebulaUpdateTime)
+		nebulaData.runningTime += dT;
+		if (nebulaData.runningTime >= nebulaData.updateTime)
 		{
-			nebulaRunningTime = 0.0;
+			nebulaData.runningTime = 0.0;
 			//Update animation frame
-			nebulaRect.x = nebulaRect.width * nebulaFrame;
-			nebulaFrame++;
-			if (nebulaFrame > 7)
+			nebulaData.rect.x = nebulaData.rect.width * nebulaData.frame;
+			nebulaData.frame++;
+			if (nebulaData.frame > 7)
 			{
-				nebulaFrame = 0;
+				nebulaData.frame = 0;
 			}
 		}
 
 
 		//Drawing sprites
 
-		DrawTextureRec(scarfy, scarfyRect, scarfyPos, WHITE);
-		DrawTextureRec(nebula, nebulaRect, nebulaPos, WHITE);
+		DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
+		DrawTextureRec(nebula, nebulaData.rect, nebulaData.pos, WHITE);
 
 		//Stop Drawing
 		EndDrawing();
