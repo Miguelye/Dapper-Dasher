@@ -10,6 +10,7 @@ int main()
 	InitWindow(WindowWidth, WindowHeight, "Dapper Dasher");
 
 	//Sprites
+	// ***SCURFY***
 	Texture2D scarfy = LoadTexture("textures/scarfy.png");
 	Rectangle scarfyRect;
 	scarfyRect.width = scarfy.width / 6;
@@ -23,7 +24,19 @@ int main()
 
 	int scarfyFrame = 0;
 
-	//scarfy data
+	// *** NEBULA ***
+	Texture2D nebula = LoadTexture("textures/nebula.png");
+	Rectangle nebulaRect;
+	nebulaRect.width = nebula.width / 8;
+	nebulaRect.height = nebula.height / 8;
+	nebulaRect.x = 0.0;
+	nebulaRect.y = 0.0;
+	Vector2 nebulaPos{ WindowWidth, WindowHeight - nebulaRect.height};
+	int nebulaVel = 400; //pixels per second
+	
+
+
+	//Bools
 	bool isCharacterGrounded;
 
 	//Forces
@@ -67,12 +80,13 @@ int main()
 			scarfyVelocity = jumpForce;
 		}
 
-		//update position
+		//update positions
 		scarfyPos.y += scarfyVelocity * dT;
+		nebulaPos.x += -nebulaVel * dT;
 
 		//Update Running Time
 		runningTime += dT;
-		if (runningTime >= updateTime)
+		if (runningTime >= updateTime && isCharacterGrounded)
 		{
 			runningTime = 0.0;
 			//Update animation frame
@@ -84,10 +98,17 @@ int main()
 			}
 		}
 
+
+
+		//Drawing sprites
+
 		DrawTextureRec(scarfy, scarfyRect, scarfyPos, WHITE);
+		DrawTextureRec(nebula, nebulaRect, nebulaPos, WHITE);
 
 		//Stop Drawing
 		EndDrawing();
 	}
+	UnloadTexture(scarfy);
+	UnloadTexture(nebula);
 	CloseWindow();
 }
