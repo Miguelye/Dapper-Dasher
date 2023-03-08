@@ -23,6 +23,8 @@ int main()
 	scarfyPos.y = WindowHeight - scarfyRect.height;
 
 	int scarfyFrame = 0;
+	const float scarfyUpdateTime = 1.0 / 12.0;
+	float scarfyRunningTime = 0;
 
 	// *** NEBULA ***
 	Texture2D nebula = LoadTexture("textures/nebula.png");
@@ -31,9 +33,13 @@ int main()
 	nebulaRect.height = nebula.height / 8;
 	nebulaRect.x = 0.0;
 	nebulaRect.y = 0.0;
+
 	Vector2 nebulaPos{ WindowWidth, WindowHeight - nebulaRect.height};
 	int nebulaVel = 400; //pixels per second
 	
+	int nebulaFrame = 0;
+	const float nebulaUpdateTime = 1.0 / 50.0;
+	float nebulaRunningTime = 0;
 
 
 	//Bools
@@ -43,10 +49,6 @@ int main()
 	const int gravity = 1'000; // pixel per second per second (p/s^2)
 	const int jumpForce = -600; //pixels/second
 	int scarfyVelocity = 0;	
-
-	//Time
-	const float updateTime = 1.0 / 12.0;
-	float runningTime = 0;
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose())
@@ -85,10 +87,11 @@ int main()
 		nebulaPos.x += -nebulaVel * dT;
 
 		//Update Running Time
-		runningTime += dT;
-		if (runningTime >= updateTime && isCharacterGrounded)
+		//Scarfy
+		scarfyRunningTime += dT;
+		if (scarfyRunningTime >= scarfyUpdateTime && isCharacterGrounded)
 		{
-			runningTime = 0.0;
+			scarfyRunningTime = 0.0;
 			//Update animation frame
 			scarfyRect.x = scarfyRect.width * scarfyFrame;
 			scarfyFrame++;
@@ -98,6 +101,19 @@ int main()
 			}
 		}
 
+		//Nebula
+		nebulaRunningTime += dT;
+		if (nebulaRunningTime >= nebulaUpdateTime)
+		{
+			nebulaRunningTime = 0.0;
+			//Update animation frame
+			nebulaRect.x = nebulaRect.width * nebulaFrame;
+			nebulaFrame++;
+			if (nebulaFrame > 7)
+			{
+				nebulaFrame = 0;
+			}
+		}
 
 
 		//Drawing sprites
