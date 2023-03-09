@@ -12,10 +12,9 @@ struct AnimData
 int main()
 {
 	//Window Data
-	const int WindowHeight = 380;
-	const int WindowWidth = 512;
+	const int WINDOW_DIMENSIONS[2]{ 512, 380 };
 	// Initialiaze Window
-	InitWindow(WindowWidth, WindowHeight, "Dapper Dasher");
+	InitWindow(WINDOW_DIMENSIONS[0], WINDOW_DIMENSIONS[1], "Dapper Dasher");
 
 	//Sprites
 	// ***SCURFY***
@@ -27,22 +26,30 @@ int main()
 	scarfyData.rect.y = 0.0;
 	scarfyData.rect.width = scarfy.width / 6;
 	scarfyData.rect.height = scarfy.height;
-	scarfyData.pos.x = WindowWidth / 2 - scarfyData.rect.width / 2;
-	scarfyData.pos.y = WindowHeight - scarfyData.rect.height;
+	scarfyData.pos.x = WINDOW_DIMENSIONS[0] / 2 - scarfyData.rect.width / 2;
+	scarfyData.pos.y = WINDOW_DIMENSIONS[1] - scarfyData.rect.height;
 	scarfyData.frame = 0;
 	scarfyData.updateTime = 1.0 / 12.0;
 	scarfyData.runningTime = 0;
 
 	// *** NEBULA ***
 	Texture2D nebula = LoadTexture("textures/nebula.png");
-	AnimData nebulaData
+
+	const int NUMBER_OF_NEBULAS = 8;
+	AnimData nebulas[NUMBER_OF_NEBULAS]{};
+
+	for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 	{
-		{0.0, 0.0, nebula.width / 8, nebula.height / 8}, //Rectangle Rect
-		{WindowWidth, WindowHeight - nebulaData.rect.height}, //Vector2 pos
-		0, //int frame
-		1.0 / 12.0, //float updateTime
-		0.0  //float runningTime
-	};
+		nebulas[i].rect.x = 0.0;
+		nebulas[i].rect.y = 0.0;
+		nebulas[i].rect.width = nebula.width / 8;
+		nebulas[i].rect.height = nebula.height / 8;
+		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + (i * 300);
+		nebulas[i].pos.y = WINDOW_DIMENSIONS[1] - nebulas[i].rect.height;
+		nebulas[i].frame = 0;
+		nebulas[i].runningTime = 0.0;
+		nebulas[i].updateTime = 1.0 / 16.0;
+	}
 
 	//Bools
 	bool isCharacterGrounded;
@@ -64,7 +71,7 @@ int main()
 		ClearBackground(WHITE);
 
 
-		isCharacterGrounded = scarfyData.pos.y >= WindowHeight - scarfyData.rect.height;
+		isCharacterGrounded = scarfyData.pos.y >= WINDOW_DIMENSIONS[1] - scarfyData.rect.height;
 
 		//ground check
 		if (isCharacterGrounded)
@@ -87,7 +94,11 @@ int main()
 
 		//update positions
 		scarfyData.pos.y += scarfyVelocity * dT;
-		nebulaData.pos.x += -nebulaVel * dT;
+
+		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
+		{
+			nebulas[i].pos.x += -nebulaVel * dT;
+		}
 
 		//Update Running Time
 		//Scarfy
@@ -105,24 +116,31 @@ int main()
 		}
 
 		//Nebula
-		nebulaData.runningTime += dT;
-		if (nebulaData.runningTime >= nebulaData.updateTime)
+		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 		{
-			nebulaData.runningTime = 0.0;
-			//Update animation frame
-			nebulaData.rect.x = nebulaData.rect.width * nebulaData.frame;
-			nebulaData.frame++;
-			if (nebulaData.frame > 7)
+			nebulas[i].runningTime += dT;
+			if (nebulas[i].runningTime >= nebulas[i].updateTime)
 			{
-				nebulaData.frame = 0;
+				nebulas[i].runningTime = 0.0;
+				//Update animation frame
+				nebulas[i].rect.x = nebulas[i].rect.width * nebulas[i].frame;
+				nebulas[i].frame++;
+				if (nebulas[i].frame > 7)
+				{
+					nebulas[i].frame = 0;
+				}
 			}
 		}
+
 
 
 		//Drawing sprites
 
 		DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
-		DrawTextureRec(nebula, nebulaData.rect, nebulaData.pos, WHITE);
+		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
+		{
+			DrawTextureRec(nebula, nebulas[i].rect, nebulas[i].pos, WHITE);
+		}
 
 		//Stop Drawing
 		EndDrawing();
