@@ -17,8 +17,8 @@ struct AnimData
 
 void InitializeScarfy(Texture2D, AnimData&);
 void InitializeNebula(Texture2D, AnimData&);
-void UpdatePositionScarfy(AnimData&, int, const float& dT);
-void UpdatePositionNebula(AnimData&, int, const float& dT);
+void UpdatePosition(AnimData&, int, int, const float& dT);
+void UpdatePosition(float, int, const float& dT);
 void UpdateRunningTime(AnimData&, const float& dT);
 bool IsGrounded(AnimData& data);
 
@@ -40,21 +40,26 @@ int main()
 	const int NUMBER_OF_NEBULAS = 8;
 	AnimData nebulas[NUMBER_OF_NEBULAS]{};
 
-	// *** BACKGROUND ***
-	Texture2D background0 = LoadTexture("textures/far-buildings.png");
-	float bgX{ 0 };
-
 	for (size_t i = 0; i <  NUMBER_OF_NEBULAS; i++)
 	{
 		InitializeNebula(nebula, nebulas[i]);
-		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + i * 300;
+		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + (i * 700);
 	}
+
+	float finishLine = nebulas[NUMBER_OF_NEBULAS - 1].pos.x + 400;
+	// *** BACKGROUND ***
+	Texture2D background = LoadTexture("textures/far-buildings.png");
+	Texture2D midground = LoadTexture("textures/back-buildings.png");
+	Texture2D foreground = LoadTexture("textures/foreground.png");
+	float bgX{ 0 };
+	float mgX{ 0 };
+	float fgX{ 0 };
 
 	//Forces
 	const int gravity = 1'000; // pixel per second per second (p/s^2)
 	const int jumpForce = -600; //pixels/second
-	int scarfyVelocity = 0;	
-	int nebulaVel = 200;
+	int scarfyJump = 0;	
+	int nebulaVel = 300;
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose())
@@ -67,27 +72,54 @@ int main()
 		ClearBackground(WHITE);
 		//Draw background
 		bgX -= 20 * dT;
-		if (bgX <= -background0.width * 2)
+		if (bgX <= -background.width * 2)
 		{
 			bgX = 0;
 		}
+
+		mgX -= 40 * dT;
+		if (mgX <= -midground.width * 2)
+		{
+			mgX = 0;
+		}
+
+		fgX -= 80 * dT;
+		if (fgX <= -foreground.width * 2)
+		{
+			fgX = 0;
+		}
+
+		//background
 		Vector2 bg1Pos{ bgX, 0.0 };
-		DrawTextureEx(background0, bg1Pos, 0.0, 2.0, WHITE);
+		DrawTextureEx(background, bg1Pos, 0.0, 2.0, WHITE);
 
-		Vector2 bg2Pos{ bgX + background0.width * 2, 0.0 };
-		DrawTextureEx(background0, bg2Pos, 0.0, 2.0, WHITE);
+		Vector2 bg2Pos{ bgX + background.width * 2, 0.0 };
+		DrawTextureEx(background, bg2Pos, 0.0, 2.0, WHITE);
 
+		//midground
+		Vector2 mg1Pos{ mgX, 0.0 };
+		DrawTextureEx(midground, mg1Pos, 0.0, 2.0, WHITE);
+
+		Vector2 mg2Pos{ mgX + midground.width * 2, 0.0 };
+		DrawTextureEx(midground, mg2Pos, 0.0, 2.0, WHITE);
+
+		//foreground
+		Vector2 fg1Pos{ fgX, 0.0 };
+		DrawTextureEx(foreground, fg1Pos, 0.0, 2.0, WHITE);
+
+		Vector2 fg2Pos{ fgX + foreground.width * 2, 0.0 };
+		DrawTextureEx(foreground, fg2Pos, 0.0, 2.0, WHITE);
 
 		//ground check
 		if (IsGrounded(scarfyData))
 		{
 			//rectangle is grounded
-			scarfyVelocity = 0;
+			scarfyJump = 0;
 
 			//Check for jumping
 			if (IsKeyPressed(KEY_SPACE))
 			{
-				scarfyVelocity = jumpForce;
+				scarfyJump = jumpForce;
 			}
 
 			UpdateRunningTime(scarfyData, dT);
@@ -96,16 +128,15 @@ int main()
 		{
 			//rectangle is on the air
 			//Apply gravity
-			scarfyVelocity += gravity * dT;
+			scarfyJump += gravity * dT;
 		}
 
-
-
 		//update positions
-		UpdatePositionScarfy(scarfyData, scarfyVelocity, dT);
+		UpdatePosition(scarfyData, 0, scarfyJump, dT);
+		UpdatePosition(finishLine, -nebulaVel, dT);
 		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 		{
-			UpdatePositionNebula(nebulas[i], nebulaVel, dT);
+			UpdatePosition(nebulas[i], -nebulaVel, 0, dT);
 		}
 
 		//Update Running Time
@@ -113,12 +144,44 @@ int main()
 		{
 			UpdateRunningTime(nebulas[i], dT);
 		}
-		//Drawing sprites
 
-		DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
-		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
+
+		bool IsCollision{};
+		for each (AnimData nebula in nebulas)
 		{
-			DrawTextureRec(nebula, nebulas[i].rect, nebulas[i].pos, WHITE);
+			float pad = 20;
+			Rectangle nebRect
+			{
+				nebula.pos.x + pad,
+				nebula.pos.y + pad,
+				nebula.rect.width - 2*pad,
+				nebula.rect.height - 2*pad
+			};
+			Rectangle scarfyRect
+			{
+				scarfyData.pos.x,
+				scarfyData.pos.y,
+				scarfyData.rect.width,
+				scarfyData.rect.height
+			};
+			if (CheckCollisionRecs(nebRect, scarfyRect))
+			{
+				IsCollision = true;
+			}
+		}
+
+		if (IsCollision)
+		{
+
+		}
+		else 
+		{
+			//Drawing sprites
+			DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
+			for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
+			{
+				DrawTextureRec(nebula, nebulas[i].rect, nebulas[i].pos, WHITE);
+			}
 		}
 
 		//Stop Drawing
@@ -126,7 +189,9 @@ int main()
 	}
 	UnloadTexture(scarfy);
 	UnloadTexture(nebula);
-	UnloadTexture(background0);
+	UnloadTexture(background);
+	UnloadTexture(midground);
+	UnloadTexture(foreground);
 	CloseWindow();
 }
 
@@ -168,14 +233,15 @@ void InitializeScarfy(Texture2D scarfy, AnimData& scarfyData)
 	scarfyData.runningTime = 0;
 }
 
-void UpdatePositionNebula(AnimData& nebulaData, int velocity, const float& dT)
+void UpdatePosition(AnimData& data, int velocityX, int velocityY, const float& dT)
 {
-	nebulaData.pos.x += -velocity * dT;
+	data.pos.x += velocityX * dT;
+	data.pos.y += velocityY * dT;
 }
 
-void UpdatePositionScarfy(AnimData& scarfyData, int velocity, const float& dT)
+void UpdatePosition(float data, int velocity, const float& dT)
 {
-	scarfyData.pos.y += velocity * dT;
+	data += velocity * dT;
 }
 
 void UpdateRunningTime(AnimData& data, const float& dT)
