@@ -1,5 +1,5 @@
 #include "raylib.h"
-
+#include <string>
 // ***Global Variables***
 //Window Data
 const int WINDOW_DIMENSIONS[2]{ 512, 380 };
@@ -18,7 +18,7 @@ struct AnimData
 void InitializeScarfy(Texture2D, AnimData&);
 void InitializeNebula(Texture2D, AnimData&);
 void UpdatePosition(AnimData&, int, int, const float& dT);
-void UpdatePosition(float, int, const float& dT);
+void UpdatePosition(float&, int, const float& dT);
 void UpdateRunningTime(AnimData&, const float& dT);
 bool IsGrounded(AnimData& data);
 
@@ -46,7 +46,8 @@ int main()
 		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + (i * 700);
 	}
 
-	float finishLine = nebulas[NUMBER_OF_NEBULAS - 1].pos.x + 400;
+	float finishLine = nebulas[NUMBER_OF_NEBULAS - 1].pos.x + 300;
+
 	// *** BACKGROUND ***
 	Texture2D background = LoadTexture("textures/far-buildings.png");
 	Texture2D midground = LoadTexture("textures/back-buildings.png");
@@ -60,6 +61,9 @@ int main()
 	const int jumpForce = -600; //pixels/second
 	int scarfyJump = 0;	
 	int nebulaVel = 300;
+
+	//collision
+	bool IsCollision = false;
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose())
@@ -138,18 +142,15 @@ int main()
 		{
 			UpdatePosition(nebulas[i], -nebulaVel, 0, dT);
 		}
-
 		//Update Running Time
 		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 		{
 			UpdateRunningTime(nebulas[i], dT);
 		}
 
-
-		bool IsCollision{};
 		for each (AnimData nebula in nebulas)
 		{
-			float pad = 20;
+			float pad = 50;
 			Rectangle nebRect
 			{
 				nebula.pos.x + pad,
@@ -172,9 +173,14 @@ int main()
 
 		if (IsCollision)
 		{
-
+			//Lose the game
+			DrawText("Game Over!", (WINDOW_DIMENSIONS[0] / 4), WINDOW_DIMENSIONS[1] / 2, 50, RED);
 		}
-		else 
+		else if (scarfyData.pos.x >= finishLine)
+		{
+			DrawText("You Win!", (WINDOW_DIMENSIONS[0] / 4), WINDOW_DIMENSIONS[1] / 2, 50, YELLOW);
+		}
+		else
 		{
 			//Drawing sprites
 			DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
@@ -239,7 +245,7 @@ void UpdatePosition(AnimData& data, int velocityX, int velocityY, const float& d
 	data.pos.y += velocityY * dT;
 }
 
-void UpdatePosition(float data, int velocity, const float& dT)
+void UpdatePosition(float& data, int velocity, const float& dT)
 {
 	data += velocity * dT;
 }
