@@ -1,7 +1,13 @@
 #include "raylib.h"
 
+// ***Global Variables***
+//Window Data
+const int WINDOW_DIMENSIONS[2]{ 512, 380 };
+
 struct AnimData
 {
+	int columns;
+	int rows;
 	Rectangle rect;
 	Vector2 pos;
 	int frame;
@@ -9,10 +15,15 @@ struct AnimData
 	float runningTime;
 };
 
+void InitializeScarfy(Texture2D, AnimData&);
+void InitializeNebula(Texture2D, AnimData&);
+void UpdatePositionScarfy(AnimData&, int, const float& dT);
+void UpdatePositionNebula(AnimData&, int, const float& dT);
+void UpdateRunningTime(AnimData&, const float& dT);
+bool IsGrounded(AnimData& data);
+
 int main()
 {
-	//Window Data
-	const int WINDOW_DIMENSIONS[2]{ 512, 380 };
 	// Initialiaze Window
 	InitWindow(WINDOW_DIMENSIONS[0], WINDOW_DIMENSIONS[1], "Dapper Dasher");
 
@@ -21,16 +32,7 @@ int main()
 	
 	Texture2D scarfy = LoadTexture("textures/scarfy.png");
 	AnimData scarfyData;
-
-	scarfyData.rect.x = 0.0;
-	scarfyData.rect.y = 0.0;
-	scarfyData.rect.width = scarfy.width / 6;
-	scarfyData.rect.height = scarfy.height;
-	scarfyData.pos.x = WINDOW_DIMENSIONS[0] / 2 - scarfyData.rect.width / 2;
-	scarfyData.pos.y = WINDOW_DIMENSIONS[1] - scarfyData.rect.height;
-	scarfyData.frame = 0;
-	scarfyData.updateTime = 1.0 / 12.0;
-	scarfyData.runningTime = 0;
+	InitializeScarfy(scarfy, scarfyData);
 
 	// *** NEBULA ***
 	Texture2D nebula = LoadTexture("textures/nebula.png");
@@ -38,21 +40,11 @@ int main()
 	const int NUMBER_OF_NEBULAS = 8;
 	AnimData nebulas[NUMBER_OF_NEBULAS]{};
 
-	for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
+	for (size_t i = 0; i <  NUMBER_OF_NEBULAS; i++)
 	{
-		nebulas[i].rect.x = 0.0;
-		nebulas[i].rect.y = 0.0;
-		nebulas[i].rect.width = nebula.width / 8;
-		nebulas[i].rect.height = nebula.height / 8;
-		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + (i * 300);
-		nebulas[i].pos.y = WINDOW_DIMENSIONS[1] - nebulas[i].rect.height;
-		nebulas[i].frame = 0;
-		nebulas[i].runningTime = 0.0;
-		nebulas[i].updateTime = 1.0 / 16.0;
+		InitializeNebula(nebula, nebulas[i]);
+		nebulas[i].pos.x = WINDOW_DIMENSIONS[0] + i * 300;
 	}
-
-	//Bools
-	bool isCharacterGrounded;
 
 	//Forces
 	const int gravity = 1'000; // pixel per second per second (p/s^2)
@@ -70,14 +62,19 @@ int main()
 		BeginDrawing();
 		ClearBackground(WHITE);
 
-
-		isCharacterGrounded = scarfyData.pos.y >= WINDOW_DIMENSIONS[1] - scarfyData.rect.height;
-
 		//ground check
-		if (isCharacterGrounded)
+		if (IsGrounded(scarfyData))
 		{
 			//rectangle is grounded
 			scarfyVelocity = 0;
+
+			//Check for jumping
+			if (IsKeyPressed(KEY_SPACE))
+			{
+				scarfyVelocity = jumpForce;
+			}
+
+			UpdateRunningTime(scarfyData, dT);
 		}
 		else
 		{
@@ -86,54 +83,20 @@ int main()
 			scarfyVelocity += gravity * dT;
 		}
 
-		//Check for jumping
-		if (IsKeyPressed(KEY_SPACE) && isCharacterGrounded)
-		{
-			scarfyVelocity = jumpForce;
-		}
+
 
 		//update positions
-		scarfyData.pos.y += scarfyVelocity * dT;
-
+		UpdatePositionScarfy(scarfyData, scarfyVelocity, dT);
 		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 		{
-			nebulas[i].pos.x += -nebulaVel * dT;
+			UpdatePositionNebula(nebulas[i], nebulaVel, dT);
 		}
 
 		//Update Running Time
-		//Scarfy
-		scarfyData.runningTime += dT;
-		if (scarfyData.runningTime >= scarfyData.updateTime && isCharacterGrounded)
-		{
-			scarfyData.runningTime = 0.0;
-			//Update animation frame
-			scarfyData.rect.x = scarfyData.rect.width * scarfyData.frame;
-			scarfyData.frame++;
-			if (scarfyData.frame > 5)
-			{
-				scarfyData.frame = 0;
-			}
-		}
-
-		//Nebula
 		for (size_t i = 0; i < NUMBER_OF_NEBULAS; i++)
 		{
-			nebulas[i].runningTime += dT;
-			if (nebulas[i].runningTime >= nebulas[i].updateTime)
-			{
-				nebulas[i].runningTime = 0.0;
-				//Update animation frame
-				nebulas[i].rect.x = nebulas[i].rect.width * nebulas[i].frame;
-				nebulas[i].frame++;
-				if (nebulas[i].frame > 7)
-				{
-					nebulas[i].frame = 0;
-				}
-			}
+			UpdateRunningTime(nebulas[i], dT);
 		}
-
-
-
 		//Drawing sprites
 
 		DrawTextureRec(scarfy, scarfyData.rect, scarfyData.pos, WHITE);
@@ -148,4 +111,65 @@ int main()
 	UnloadTexture(scarfy);
 	UnloadTexture(nebula);
 	CloseWindow();
+}
+
+void InitializeNebula(Texture2D nebula, AnimData& nebulaData)
+{
+	nebulaData.columns = 8;
+	nebulaData.rows = 1;
+	nebulaData.rect.x = 0.0;
+	nebulaData.rect.y = 0.0;
+	nebulaData.rect.width = nebula.width / nebulaData.columns;
+	nebulaData.rect.height = nebula.height / nebulaData.columns;
+	nebulaData.pos.x = WINDOW_DIMENSIONS[0];
+	nebulaData.pos.y = WINDOW_DIMENSIONS[1] - nebulaData.rect.height;
+	nebulaData.frame = 0;
+	nebulaData.runningTime = 0.0;
+	nebulaData.updateTime = 1.0 / 16.0;
+}
+
+void InitializeScarfy(Texture2D scarfy, AnimData& scarfyData)
+{
+	scarfyData.columns = 6;
+	scarfyData.rows = 1;
+	scarfyData.rect.x = 0.0;
+	scarfyData.rect.y = 0.0;
+	scarfyData.rect.width = scarfy.width / scarfyData.columns;
+	scarfyData.rect.height = scarfy.height;
+	scarfyData.pos.x = WINDOW_DIMENSIONS[0] / 2 - scarfyData.rect.width / 2;
+	scarfyData.pos.y = WINDOW_DIMENSIONS[1] - scarfyData.rect.height;
+	scarfyData.frame = 0;
+	scarfyData.updateTime = 1.0 / 12.0;
+	scarfyData.runningTime = 0;
+}
+
+void UpdatePositionNebula(AnimData& nebulaData, int velocity, const float& dT)
+{
+	nebulaData.pos.x += -velocity * dT;
+}
+
+void UpdatePositionScarfy(AnimData& scarfyData, int velocity, const float& dT)
+{
+	scarfyData.pos.y += velocity * dT;
+}
+
+void UpdateRunningTime(AnimData& data, const float& dT)
+{
+	data.runningTime += dT;
+	if (data.runningTime >= data.updateTime)
+	{
+		data.runningTime = 0.0;
+		//Update animation frame
+		data.rect.x = data.rect.width * data.frame;
+		data.frame++;
+		if (data.frame > data.columns - 1)
+		{
+			data.frame = 0;
+		}
+	}
+}
+
+bool IsGrounded(AnimData& data)
+{
+	return data.pos.y >= WINDOW_DIMENSIONS[1] - data.rect.height;
 }
