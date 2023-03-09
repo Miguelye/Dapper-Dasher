@@ -40,6 +40,10 @@ int main()
 	const int NUMBER_OF_NEBULAS = 8;
 	AnimData nebulas[NUMBER_OF_NEBULAS]{};
 
+	// *** BACKGROUND ***
+	Texture2D background0 = LoadTexture("textures/far-buildings.png");
+	float bgX{ 0 };
+
 	for (size_t i = 0; i <  NUMBER_OF_NEBULAS; i++)
 	{
 		InitializeNebula(nebula, nebulas[i]);
@@ -61,6 +65,18 @@ int main()
 		//Start Drawing
 		BeginDrawing();
 		ClearBackground(WHITE);
+		//Draw background
+		bgX -= 20 * dT;
+		if (bgX <= -background0.width * 2)
+		{
+			bgX = 0;
+		}
+		Vector2 bg1Pos{ bgX, 0.0 };
+		DrawTextureEx(background0, bg1Pos, 0.0, 2.0, WHITE);
+
+		Vector2 bg2Pos{ bgX + background0.width * 2, 0.0 };
+		DrawTextureEx(background0, bg2Pos, 0.0, 2.0, WHITE);
+
 
 		//ground check
 		if (IsGrounded(scarfyData))
@@ -110,8 +126,17 @@ int main()
 	}
 	UnloadTexture(scarfy);
 	UnloadTexture(nebula);
+	UnloadTexture(background0);
 	CloseWindow();
 }
+
+
+
+
+
+
+
+
 
 void InitializeNebula(Texture2D nebula, AnimData& nebulaData)
 {
